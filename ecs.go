@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ type Information struct {
 	task *types.Task
 }
 
-func (info Information) ShouldBePurged(duration time.Duration, excludesMap map[string]struct{}, excludeTagsMap map[string]string) bool {
+func (info Information) ShouldBePurged(duration time.Duration, excludesMap map[string]struct{}, excludeTagsMap map[string]string, excludeRegexp *regexp.Regexp) bool {
 	if info.LastStatus != statusRunning {
 		slog.Info(f("skip not running task: %s subdomain: %s", info.LastStatus, info.SubDomain))
 		return false
@@ -58,6 +59,11 @@ func (info Information) ShouldBePurged(duration time.Duration, excludesMap map[s
 			return false
 		}
 	}
+	if excludeRegexp != nil && excludeRegexp.MatchString(info.SubDomain) {
+		slog.Info(f("skip exclude regexp: %s subdomain: %s", excludeRegexp.String(), info.SubDomain))
+		return false
+	}
+
 	begin := time.Now().Add(-duration)
 	if info.Created.After(begin) {
 		slog.Info(f("skip recent created: %s subdomain: %s", info.Created.Format(time.RFC3339), info.SubDomain))

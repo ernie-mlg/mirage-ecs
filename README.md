@@ -658,7 +658,9 @@ Query parameters:
 - `excludes`: subdomains of tasks to exclude termination. multiple values are allowed.
 - `exclude_tags`: tags of tasks to exclude termination. multiple values are allowed.
   - format is `Key:Value`
-  - See also /api/lanch.
+  - See also /api/launch.
+- `exclude_regexp`: A regexp of subdomains to exclude termination.
+  - This value is compiled by [`regexp`](https://pkg.go.dev/regexp) package.
 - `duration`: duration(seconds) of the counter. required. minimum is 300 (5 min).
 
 
@@ -668,6 +670,7 @@ Query parameters:
 {
   "excludes": ["foo", "bar"],
   "exclude_tags": ["branch:preview"],
+  "exclude_regexp": "^(foo|bar)",
   "duration": 86400
 }
 ```
