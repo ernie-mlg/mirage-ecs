@@ -2,6 +2,7 @@ package mirageecs_test
 
 import (
 	"context"
+	"regexp"
 	"testing"
 	"time"
 
@@ -118,6 +119,7 @@ var purgeTests = []struct {
 	duration       time.Duration
 	excludesMap    map[string]struct{}
 	excludeTagsMap map[string]string
+	excludeRegexp  *regexp.Regexp
 	expected       bool
 }{
 	{
@@ -155,6 +157,18 @@ var purgeTests = []struct {
 		expected: false,
 	},
 	{
+		name:          "excluded regexp",
+		duration:      1 * time.Minute,
+		excludeRegexp: regexp.MustCompile("te.t"),
+		expected:      false,
+	},
+	{
+		name:          "excluded regexp not match",
+		duration:      1 * time.Minute,
+		excludeRegexp: regexp.MustCompile("text"),
+		expected:      true,
+	},
+	{
 		name:     "excluded tag not match",
 		duration: 1 * time.Minute,
 		excludeTagsMap: map[string]string{
@@ -183,7 +197,7 @@ func TestShouldBePurged(t *testing.T) {
 	}
 	for _, s := range purgeTests {
 		t.Run(s.name, func(t *testing.T) {
-			if info.ShouldBePurged(s.duration, s.excludesMap, s.excludeTagsMap) != s.expected {
+			if info.ShouldBePurged(s.duration, s.excludesMap, s.excludeTagsMap, s.excludeRegexp) != s.expected {
 				t.Errorf("Mismatch in ShouldBePurged: %v", s)
 			}
 		})

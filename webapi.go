@@ -385,9 +385,9 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 		slog.Error(msg)
 		return http.StatusBadRequest, errors.New(msg)
 	}
-	mininum := int64(PurgeMinimumDuration.Seconds())
-	if di < mininum {
-		msg := fmt.Sprintf("invalid duration %d (at least %d)", di, mininum)
+	minimum := int64(PurgeMinimumDuration.Seconds())
+	if di < minimum {
+		msg := fmt.Sprintf("invalid duration %d (at least %d)", di, minimum)
 		slog.Error(msg)
 		return http.StatusBadRequest, errors.New(msg)
 	}
@@ -407,6 +407,17 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 		k, v := p[0], p[1]
 		excludeTagsMap[k] = v
 	}
+	var excludeRegexp *regexp.Regexp
+	if r.ExcludeRegexp != "" {
+		var err error
+		excludeRegexp, err = regexp.Compile(r.ExcludeRegexp)
+		if err != nil {
+			msg := fmt.Sprintf("invalid exclude_regexp %s", r.ExcludeRegexp)
+			slog.Error(msg)
+			return http.StatusBadRequest, errors.New(msg)
+		}
+	}
+
 	duration := time.Duration(di) * time.Second
 
 	infos, err := api.runner.List(c.Request().Context(), statusRunning)
@@ -414,10 +425,15 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 		slog.Error(f("list ecs failed: %s", err))
 		return http.StatusInternalServerError, err
 	}
-	slog.Info(f("purge subdomains: duration=%s, excludes=%v, exclude_tags=%v", duration, excludes, excludeTags))
+	slog.Info("purge subdomains",
+		"duration", duration,
+		"excludes", excludes,
+		"exclude_tags", excludeTags,
+		"exclude_regexp", excludeRegexp,
+	)
 	tm := make(map[string]struct{}, len(infos))
 	for _, info := range infos {
-		if info.ShouldBePurged(duration, excludesMap, excludeTagsMap) {
+		if info.ShouldBePurged(duration, excludesMap, excludeTagsMap, excludeRegexp) {
 			tm[info.SubDomain] = struct{}{}
 		}
 	}
