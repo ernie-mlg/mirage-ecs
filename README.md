@@ -350,7 +350,7 @@ auth:
     token: "{{ env `MIRAGE_TOKEN` }}"
   amzn_oidc:
     claim: email
-    matcher:
+    matchers:
       - suffix: "@example.com"
       - exact: "foo@example.net"
   basic:
@@ -401,7 +401,7 @@ This configuration requires username and password to access mirage-ecs by Basic 
 auth:
   amzn_oidc:
     claim: email
-    matcher:
+    matchers:
       - suffix: "@example.com"
       - exact: "foo@example.net"
 ```
