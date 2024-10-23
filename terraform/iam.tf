@@ -29,6 +29,7 @@ resource "aws_iam_policy" "mirage-ecs" {
           "ecs:DescribeServices",
           "ecs:StopTask",
           "ecs:ListTasks",
+          "ecs:TagResource",
           "cloudwatch:PutMetricData",
           "cloudwatch:GetMetricData",
           "logs:GetLogEvents",
