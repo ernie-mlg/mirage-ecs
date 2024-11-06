@@ -47,13 +47,13 @@ func (info Information) ShouldBePurged(p *PurgeParams) bool {
 		slog.Info(f("skip not running task: %s subdomain: %s", info.LastStatus, info.SubDomain))
 		return false
 	}
-	if _, ok := p.Excludes[info.SubDomain]; ok {
+	if _, ok := p.excludesMap[info.SubDomain]; ok {
 		slog.Info(f("skip exclude subdomain: %s", info.SubDomain))
 		return false
 	}
 	for _, t := range info.Tags {
 		k, v := aws.ToString(t.Key), aws.ToString(t.Value)
-		if ev, ok := p.ExcludeTags[k]; ok && ev == v {
+		if ev, ok := p.excludeTagsMap[k]; ok && ev == v {
 			slog.Info(f("skip exclude tag: %s=%s subdomain: %s", k, v, info.SubDomain))
 			return false
 		}

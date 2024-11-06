@@ -67,9 +67,12 @@ type APIPurgeRequest struct {
 
 type PurgeParams struct {
 	Duration      time.Duration
-	Excludes      map[string]struct{}
-	ExcludeTags   map[string]string
+	Excludes      []string
+	ExcludeTags   []string
 	ExcludeRegexp *regexp.Regexp
+
+	excludesMap    map[string]struct{}
+	excludeTagsMap map[string]string
 }
 
 func (r *APIPurgeRequest) Validate() (*PurgeParams, error) {
@@ -109,9 +112,12 @@ func (r *APIPurgeRequest) Validate() (*PurgeParams, error) {
 
 	return &PurgeParams{
 		Duration:      duration,
-		Excludes:      excludesMap,
-		ExcludeTags:   excludeTagsMap,
+		Excludes:      excludes,
+		ExcludeTags:   excludeTags,
 		ExcludeRegexp: excludeRegexp,
+
+		excludesMap:    excludesMap,
+		excludeTagsMap: excludeTagsMap,
 	}, nil
 }
 

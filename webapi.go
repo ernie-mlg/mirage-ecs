@@ -390,22 +390,24 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 	}
 	slog.Info("purge subdomains",
 		"duration", p.Duration,
-		"excludes", lo.Keys(p.Excludes),
+		"excludes", p.Excludes,
 		"exclude_tags", p.ExcludeTags,
 		"exclude_regexp", p.ExcludeRegexp,
 	)
-	tm := make(map[string]struct{}, len(infos))
+	terminates := []string{}
 	for _, info := range infos {
 		if info.ShouldBePurged(p) {
-			tm[info.SubDomain] = struct{}{}
+			terminates = append(terminates, info.SubDomain)
 		}
 	}
-	terminates := lo.Keys(tm)
+	terminates = lo.Uniq(terminates)
 	if len(terminates) > 0 {
+		slog.Info(f("purge %d subdomains", len(terminates)))
 		// running in background. Don't cancel by client context.
 		go api.purgeSubdomains(context.Background(), terminates, p.Duration)
 	}
 
+	slog.Info("no subdomains to purge")
 	return http.StatusOK, nil
 }
 
