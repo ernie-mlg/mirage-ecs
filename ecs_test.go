@@ -2,7 +2,6 @@ package mirageecs_test
 
 import (
 	"context"
-	"regexp"
 	"testing"
 	"time"
 
@@ -115,64 +114,69 @@ func TestToECSKeyValuePairsAndTags(t *testing.T) {
 }
 
 var purgeTests = []struct {
-	name           string
-	duration       time.Duration
-	excludesMap    map[string]struct{}
-	excludeTagsMap map[string]string
-	excludeRegexp  *regexp.Regexp
-	expected       bool
+	name     string
+	param    *mirageecs.APIPurgeRequest
+	expected bool
 }{
 	{
-		name:     "young task",
-		duration: 10 * time.Minute,
-		expected: false,
-	},
-	{
-		name:     "old task",
-		duration: 1 * time.Minute,
-		expected: true,
-	},
-	{
-		name:     "excluded task",
-		duration: 1 * time.Minute,
-		excludesMap: map[string]struct{}{
-			"test": {},
+		name: "young task",
+		param: &mirageecs.APIPurgeRequest{
+			Duration: "600", // 10 minutes
 		},
 		expected: false,
 	},
 	{
-		name:     "excluded task not match",
-		duration: 1 * time.Minute,
-		excludesMap: map[string]struct{}{
-			"test2": {},
+		name: "old task",
+		param: &mirageecs.APIPurgeRequest{
+			Duration: "300", // 5 minutes
 		},
 		expected: true,
 	},
 	{
-		name:     "excluded tag",
-		duration: 1 * time.Minute,
-		excludeTagsMap: map[string]string{
-			"DontPurge": "true",
+		name: "excluded task",
+		param: &mirageecs.APIPurgeRequest{
+			Duration: "300",
+			Excludes: []string{"test"},
 		},
 		expected: false,
 	},
 	{
-		name:          "excluded regexp",
-		duration:      1 * time.Minute,
-		excludeRegexp: regexp.MustCompile("te.t"),
-		expected:      false,
+		name: "excluded task not match",
+		param: &mirageecs.APIPurgeRequest{
+			Duration: "300",
+			Excludes: []string{"test2"},
+		},
+		expected: true,
 	},
 	{
-		name:          "excluded regexp not match",
-		duration:      1 * time.Minute,
-		excludeRegexp: regexp.MustCompile("text"),
-		expected:      true,
+		name: "excluded tag",
+		param: &mirageecs.APIPurgeRequest{
+			Duration:    "300",
+			ExcludeTags: []string{"DontPurge:true"},
+		},
+		expected: false,
 	},
 	{
-		name:     "excluded tag not match",
-		duration: 1 * time.Minute,
-		excludeTagsMap: map[string]string{
-			"xxx": "true",
+		name: "excluded regexp",
+		param: &mirageecs.APIPurgeRequest{
+			Duration:      "300",
+			ExcludeRegexp: "te.t",
+		},
+		expected: false,
+	},
+	{
+		name: "excluded regexp not match",
+		param: &mirageecs.APIPurgeRequest{
+			Duration:      "300",
+			ExcludeRegexp: "xxx",
+		},
+		expected: true,
+	},
+	{
+		name: "excluded tag not match",
+		param: &mirageecs.APIPurgeRequest{
+			Duration:    "300",
+			ExcludeTags: []string{"xxx:true"},
 		},
 		expected: true,
 	},
@@ -186,7 +190,7 @@ func TestShouldBePurged(t *testing.T) {
 		GitBranch:  "develop",
 		TaskDef:    "dummy",
 		IPAddress:  "127.0.0.1",
-		Created:    time.Now().Add(-5 * time.Minute),
+		Created:    time.Now().Add(-7 * time.Minute),
 		LastStatus: "RUNNING",
 		PortMap:    map[string]int{"http": 80},
 		Env:        map[string]string{"ENV": "test"},
@@ -197,7 +201,12 @@ func TestShouldBePurged(t *testing.T) {
 	}
 	for _, s := range purgeTests {
 		t.Run(s.name, func(t *testing.T) {
-			if info.ShouldBePurged(s.duration, s.excludesMap, s.excludeTagsMap, s.excludeRegexp) != s.expected {
+			p, err := s.param.Validate()
+			if err != nil {
+				t.Errorf("Error in Validate: %v", err)
+			}
+			t.Logf("PurgeParams: %#v", p)
+			if info.ShouldBePurged(p) != s.expected {
 				t.Errorf("Mismatch in ShouldBePurged: %v", s)
 			}
 		})

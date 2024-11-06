@@ -2,7 +2,6 @@ package mirageecs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -377,48 +376,12 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 	if err := c.Bind(&r); err != nil {
 		return http.StatusBadRequest, err
 	}
-	excludes := r.Excludes
-	excludeTags := r.ExcludeTags
-	di, err := r.Duration.Int64()
+
+	p, err := r.Validate()
 	if err != nil {
-		msg := fmt.Sprintf("invalid duration %s", r.Duration)
-		slog.Error(msg)
-		return http.StatusBadRequest, errors.New(msg)
+		slog.Error(f("purge failed: %s", err))
+		return http.StatusBadRequest, err
 	}
-	minimum := int64(PurgeMinimumDuration.Seconds())
-	if di < minimum {
-		msg := fmt.Sprintf("invalid duration %d (at least %d)", di, minimum)
-		slog.Error(msg)
-		return http.StatusBadRequest, errors.New(msg)
-	}
-
-	excludesMap := make(map[string]struct{}, len(excludes))
-	for _, exclude := range excludes {
-		excludesMap[exclude] = struct{}{}
-	}
-	excludeTagsMap := make(map[string]string, len(excludeTags))
-	for _, excludeTag := range excludeTags {
-		p := strings.SplitN(excludeTag, ":", 2)
-		if len(p) != 2 {
-			msg := fmt.Sprintf("invalid exclude_tags format %s", excludeTag)
-			slog.Error(msg)
-			return http.StatusBadRequest, errors.New(msg)
-		}
-		k, v := p[0], p[1]
-		excludeTagsMap[k] = v
-	}
-	var excludeRegexp *regexp.Regexp
-	if r.ExcludeRegexp != "" {
-		var err error
-		excludeRegexp, err = regexp.Compile(r.ExcludeRegexp)
-		if err != nil {
-			msg := fmt.Sprintf("invalid exclude_regexp %s", r.ExcludeRegexp)
-			slog.Error(msg)
-			return http.StatusBadRequest, errors.New(msg)
-		}
-	}
-
-	duration := time.Duration(di) * time.Second
 
 	infos, err := api.runner.List(c.Request().Context(), statusRunning)
 	if err != nil {
@@ -426,23 +389,25 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 		return http.StatusInternalServerError, err
 	}
 	slog.Info("purge subdomains",
-		"duration", duration,
-		"excludes", excludes,
-		"exclude_tags", excludeTags,
-		"exclude_regexp", excludeRegexp,
+		"duration", p.Duration,
+		"excludes", p.Excludes,
+		"exclude_tags", p.ExcludeTags,
+		"exclude_regexp", p.ExcludeRegexp,
 	)
-	tm := make(map[string]struct{}, len(infos))
+	terminates := []string{}
 	for _, info := range infos {
-		if info.ShouldBePurged(duration, excludesMap, excludeTagsMap, excludeRegexp) {
-			tm[info.SubDomain] = struct{}{}
+		if info.ShouldBePurged(p) {
+			terminates = append(terminates, info.SubDomain)
 		}
 	}
-	terminates := lo.Keys(tm)
+	terminates = lo.Uniq(terminates)
 	if len(terminates) > 0 {
+		slog.Info(f("purge %d subdomains", len(terminates)))
 		// running in background. Don't cancel by client context.
-		go api.purgeSubdomains(context.Background(), terminates, duration)
+		go api.purgeSubdomains(context.Background(), terminates, p.Duration)
 	}
 
+	slog.Info("no subdomains to purge")
 	return http.StatusOK, nil
 }
 

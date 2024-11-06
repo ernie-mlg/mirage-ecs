@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -43,28 +42,28 @@ type Information struct {
 	task *types.Task
 }
 
-func (info Information) ShouldBePurged(duration time.Duration, excludesMap map[string]struct{}, excludeTagsMap map[string]string, excludeRegexp *regexp.Regexp) bool {
+func (info Information) ShouldBePurged(p *PurgeParams) bool {
 	if info.LastStatus != statusRunning {
 		slog.Info(f("skip not running task: %s subdomain: %s", info.LastStatus, info.SubDomain))
 		return false
 	}
-	if _, ok := excludesMap[info.SubDomain]; ok {
+	if _, ok := p.excludesMap[info.SubDomain]; ok {
 		slog.Info(f("skip exclude subdomain: %s", info.SubDomain))
 		return false
 	}
 	for _, t := range info.Tags {
 		k, v := aws.ToString(t.Key), aws.ToString(t.Value)
-		if ev, ok := excludeTagsMap[k]; ok && ev == v {
+		if ev, ok := p.excludeTagsMap[k]; ok && ev == v {
 			slog.Info(f("skip exclude tag: %s=%s subdomain: %s", k, v, info.SubDomain))
 			return false
 		}
 	}
-	if excludeRegexp != nil && excludeRegexp.MatchString(info.SubDomain) {
-		slog.Info(f("skip exclude regexp: %s subdomain: %s", excludeRegexp.String(), info.SubDomain))
+	if p.ExcludeRegexp != nil && p.ExcludeRegexp.MatchString(info.SubDomain) {
+		slog.Info(f("skip exclude regexp: %s subdomain: %s", p.ExcludeRegexp.String(), info.SubDomain))
 		return false
 	}
 
-	begin := time.Now().Add(-duration)
+	begin := time.Now().Add(-p.Duration)
 	if info.Created.After(begin) {
 		slog.Info(f("skip recent created: %s subdomain: %s", info.Created.Format(time.RFC3339), info.SubDomain))
 		return false
