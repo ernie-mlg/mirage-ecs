@@ -115,64 +115,65 @@ func TestToECSKeyValuePairsAndTags(t *testing.T) {
 }
 
 var purgeTests = []struct {
-	name           string
-	duration       time.Duration
-	excludesMap    map[string]struct{}
-	excludeTagsMap map[string]string
-	excludeRegexp  *regexp.Regexp
-	expected       bool
+	name     string
+	param    *mirageecs.PurgeParams
+	expected bool
 }{
 	{
 		name:     "young task",
-		duration: 10 * time.Minute,
+		param:    &mirageecs.PurgeParams{Duration: 10 * time.Minute},
 		expected: false,
 	},
 	{
 		name:     "old task",
-		duration: 1 * time.Minute,
+		param:    &mirageecs.PurgeParams{Duration: 1 * time.Minute},
 		expected: true,
 	},
 	{
-		name:     "excluded task",
-		duration: 1 * time.Minute,
-		excludesMap: map[string]struct{}{
-			"test": {},
+		name: "excluded task",
+		param: &mirageecs.PurgeParams{
+			Duration: 1 * time.Minute,
+			Excludes: map[string]struct{}{"test": {}},
 		},
 		expected: false,
 	},
 	{
-		name:     "excluded task not match",
-		duration: 1 * time.Minute,
-		excludesMap: map[string]struct{}{
-			"test2": {},
+		name: "excluded task not match",
+		param: &mirageecs.PurgeParams{
+			Duration: 1 * time.Minute,
+			Excludes: map[string]struct{}{"test2": {}},
 		},
 		expected: true,
 	},
 	{
-		name:     "excluded tag",
-		duration: 1 * time.Minute,
-		excludeTagsMap: map[string]string{
-			"DontPurge": "true",
+		name: "excluded tag",
+		param: &mirageecs.PurgeParams{
+			Duration:    1 * time.Minute,
+			ExcludeTags: map[string]string{"DontPurge": "true"},
 		},
 		expected: false,
 	},
 	{
-		name:          "excluded regexp",
-		duration:      1 * time.Minute,
-		excludeRegexp: regexp.MustCompile("te.t"),
-		expected:      false,
+		name: "excluded regexp",
+		param: &mirageecs.PurgeParams{
+			Duration:      1 * time.Minute,
+			ExcludeRegexp: regexp.MustCompile("te.t"),
+		},
+		expected: false,
 	},
 	{
-		name:          "excluded regexp not match",
-		duration:      1 * time.Minute,
-		excludeRegexp: regexp.MustCompile("text"),
-		expected:      true,
+		name: "excluded regexp not match",
+		param: &mirageecs.PurgeParams{
+			Duration:      1 * time.Minute,
+			ExcludeRegexp: regexp.MustCompile("xxx"),
+		},
+		expected: true,
 	},
 	{
-		name:     "excluded tag not match",
-		duration: 1 * time.Minute,
-		excludeTagsMap: map[string]string{
-			"xxx": "true",
+		name: "excluded tag not match",
+		param: &mirageecs.PurgeParams{
+			Duration:    1 * time.Minute,
+			ExcludeTags: map[string]string{"xxx": "true"},
 		},
 		expected: true,
 	},
@@ -197,7 +198,7 @@ func TestShouldBePurged(t *testing.T) {
 	}
 	for _, s := range purgeTests {
 		t.Run(s.name, func(t *testing.T) {
-			if info.ShouldBePurged(s.duration, s.excludesMap, s.excludeTagsMap, s.excludeRegexp) != s.expected {
+			if info.ShouldBePurged(s.param) != s.expected {
 				t.Errorf("Mismatch in ShouldBePurged: %v", s)
 			}
 		})

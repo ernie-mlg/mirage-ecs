@@ -2,7 +2,11 @@ package mirageecs
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"regexp"
+	"strings"
+	"time"
 )
 
 // APIListResponse is a response of /api/list
@@ -59,6 +63,56 @@ type APIPurgeRequest struct {
 	Excludes      []string    `json:"excludes" form:"excludes"`
 	ExcludeTags   []string    `json:"exclude_tags" form:"exclude_tags"`
 	ExcludeRegexp string      `json:"exclude_regexp" form:"exclude_regexp"`
+}
+
+type PurgeParams struct {
+	Duration      time.Duration
+	Excludes      map[string]struct{}
+	ExcludeTags   map[string]string
+	ExcludeRegexp *regexp.Regexp
+}
+
+func (r *APIPurgeRequest) Validate() (*PurgeParams, error) {
+	excludes := r.Excludes
+	excludeTags := r.ExcludeTags
+	di, err := r.Duration.Int64()
+	if err != nil {
+		return nil, fmt.Errorf("invalid duration %s", r.Duration)
+	}
+	minimum := int64(PurgeMinimumDuration.Seconds())
+	if di < minimum {
+		return nil, fmt.Errorf("invalid duration %d (at least %d)", di, minimum)
+	}
+
+	excludesMap := make(map[string]struct{}, len(excludes))
+	for _, exclude := range excludes {
+		excludesMap[exclude] = struct{}{}
+	}
+	excludeTagsMap := make(map[string]string, len(excludeTags))
+	for _, excludeTag := range excludeTags {
+		p := strings.SplitN(excludeTag, ":", 2)
+		if len(p) != 2 {
+			return nil, fmt.Errorf("invalid exclude_tags format %s", excludeTag)
+		}
+		k, v := p[0], p[1]
+		excludeTagsMap[k] = v
+	}
+	var excludeRegexp *regexp.Regexp
+	if r.ExcludeRegexp != "" {
+		var err error
+		excludeRegexp, err = regexp.Compile(r.ExcludeRegexp)
+		if err != nil {
+			return nil, fmt.Errorf("invalid exclude_regexp %s", r.ExcludeRegexp)
+		}
+	}
+	duration := time.Duration(di) * time.Second
+
+	return &PurgeParams{
+		Duration:      duration,
+		Excludes:      excludesMap,
+		ExcludeTags:   excludeTagsMap,
+		ExcludeRegexp: excludeRegexp,
+	}, nil
 }
 
 type APITerminateRequest struct {
