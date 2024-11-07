@@ -74,9 +74,10 @@ func (m *Mirage) Run(ctx context.Context) error {
 		}(v.ListenPort)
 	}
 
-	wg.Add(2)
+	wg.Add(3)
 	go m.syncECSToMirage(ctx, &wg)
 	go m.RunAccessCountCollector(ctx, &wg)
+	go m.RunScheduledPurger(ctx, &wg)
 	wg.Wait()
 	slog.Info("shutdown mirage-ecs")
 	select {
@@ -144,6 +145,32 @@ func (m *Mirage) RunAccessCountCollector(ctx context.Context, wg *sync.WaitGroup
 		s, _ := json.Marshal(all)
 		slog.Info(f("access counters: %s", string(s)))
 		m.runner.PutAccessCounts(ctx, all)
+	}
+}
+
+func (m *Mirage) RunScheduledPurger(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	p := m.Config.Purge
+	if p == nil {
+		slog.Debug("Purge is not configured")
+		return
+	}
+	slog.Info(f("starting up RunScheduledPurger() schedule: %s", p.cron.String()))
+	for {
+		now := time.Now().Add(time.Minute)
+		next := p.cron.Next(now)
+		slog.Info(f("next purge invocation at: %s", next))
+		duration := time.Until(next)
+		select {
+		case <-ctx.Done():
+			slog.Info("RunScheduledPurger() is done")
+			return
+		case <-time.After(duration):
+			slog.Info("scheduled purge invoked")
+			if err := m.WebApi.purge(ctx, p.purgeParams); err != nil {
+				slog.Warn(err.Error())
+			}
+		}
 	}
 }
 
