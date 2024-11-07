@@ -678,6 +678,8 @@ Query parameters:
 
 `/api/purge` terminates tasks that not be accessed in the specified duration.
 
+See also [purge section](#purge-section) of config file.
+
 #### Form parameters
 
 - `excludes`: subdomains of tasks to exclude termination. multiple values are allowed.
