@@ -7,11 +7,10 @@ import (
 )
 
 type Purge struct {
-	Schedule string           `json:"schedule"`
-	Request  *APIPurgeRequest `json:"request"`
-
-	purgeParams *PurgeParams
-	cron        *cronplan.Expression
+	Schedule    string           `json:"schedule"`
+	Request     *APIPurgeRequest `json:"request"`
+	PurgeParams *PurgeParams
+	Cron        *cronplan.Expression
 }
 
 func (p *Purge) Validate() error {
@@ -19,7 +18,7 @@ func (p *Purge) Validate() error {
 	if err != nil {
 		return fmt.Errorf("invalid schedule expression %s: %w", p.Schedule, err)
 	}
-	p.cron = cron
+	p.Cron = cron
 
 	if p.Request == nil {
 		return fmt.Errorf("purge request is required")
@@ -28,7 +27,7 @@ func (p *Purge) Validate() error {
 	if err != nil {
 		return fmt.Errorf("invalid purge request: %w", err)
 	}
-	p.purgeParams = purgeParams
+	p.PurgeParams = purgeParams
 
 	return nil
 }

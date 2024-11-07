@@ -155,10 +155,10 @@ func (m *Mirage) RunScheduledPurger(ctx context.Context, wg *sync.WaitGroup) {
 		slog.Debug("Purge is not configured")
 		return
 	}
-	slog.Info(f("starting up RunScheduledPurger() schedule: %s", p.cron.String()))
+	slog.Info(f("starting up RunScheduledPurger() schedule: %s", p.Cron.String()))
 	for {
 		now := time.Now().Add(time.Minute)
-		next := p.cron.Next(now)
+		next := p.Cron.Next(now)
 		slog.Info(f("next purge invocation at: %s", next))
 		duration := time.Until(next)
 		select {
@@ -167,7 +167,7 @@ func (m *Mirage) RunScheduledPurger(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		case <-time.After(duration):
 			slog.Info("scheduled purge invoked")
-			if err := m.WebApi.purge(ctx, p.purgeParams); err != nil {
+			if err := m.WebApi.purge(ctx, p.PurgeParams); err != nil {
 				slog.Warn(err.Error())
 			}
 		}
@@ -211,7 +211,7 @@ SYNC:
 		})
 		available := make(map[string]bool)
 		for _, info := range running {
-			slog.Debug(f("ruuning task %s", info.ID))
+			slog.Debug(f("running task %s", info.ID))
 			if info.IPAddress != "" {
 				available[info.SubDomain] = true
 				for name, port := range info.PortMap {
