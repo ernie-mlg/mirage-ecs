@@ -327,7 +327,7 @@ link:
     - backend-taskdef
 ```
 
-See "mirage link" section for details.
+See ["mirage link"](#mirage-link) for details.
 
 #### `purge` section
 
@@ -383,7 +383,7 @@ auth:
     password: "{{ env `MIRAGE_PASSWORD` }}"
 ```
 
-#### `cookie_secret` section
+##### `cookie_secret` sub section
 
 `cookie_secret` section configures secret key for cookie authentication.
 
@@ -392,7 +392,7 @@ When you configure `cookie_secret`, mirage-ecs sets a cookie to the browser afte
 When `/api/*` is accessed, mirage-ecs does not set a cookie to the clients. The `/api/*`
 paths allow authentication by token only.
 
-##### `token` section
+##### `token` sub section
 
 `token` section configures token authentication. The token is passed by specfied HTTP header.
 
@@ -405,7 +405,7 @@ auth:
 
 This configuration requires `x-mirage-token: foobarbaz` HTTP header to access mirage-ecs.
 
-##### `basic` section
+##### `basic` sub section
 
 `basic` section configures HTTP Basic authentication.
 
@@ -418,7 +418,7 @@ auth:
 
 This configuration requires username and password to access mirage-ecs by Basic authentication.
 
-##### `amzn_oidc` section
+##### `amzn_oidc` sub section
 
 `amzn_oidc` section configures OIDC authentication by Application Load Balancer. See also [Authenticate users using an Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html)
 
