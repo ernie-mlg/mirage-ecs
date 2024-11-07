@@ -329,6 +329,31 @@ link:
 
 See "mirage link" section for details.
 
+#### `purge` section
+
+`purge` section configures purge settings.
+
+```yaml
+purge:
+  schedule: "13 4 * * ? *" # cron expression
+  request:
+    duration: 86400
+    excludes:
+      - foo
+      - bar
+    exclude_tags:
+      - "branch:preview"
+    exclude_regexp: "^(foo|bar)"
+```
+
+The `schedule` is a cron expression to run the purge task.
+
+- mirage-ecs runs the purge task at the specified schedule.
+- The expression is the same as the Amazon EventBridge `cron()`.
+  - See the document of [Cron expressions](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-scheduled-rule-pattern.html#eb-cron-expressions) for details.
+  - Timezone is depends on the ECS task timezone.
+
+The `request` section is the same as the `/api/purge` API. See [API Documents](#post-apipurge).
 
 #### `auth` section
 
