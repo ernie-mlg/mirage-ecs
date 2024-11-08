@@ -74,9 +74,10 @@ func (m *Mirage) Run(ctx context.Context) error {
 		}(v.ListenPort)
 	}
 
-	wg.Add(2)
+	wg.Add(3)
 	go m.syncECSToMirage(ctx, &wg)
 	go m.RunAccessCountCollector(ctx, &wg)
+	go m.RunScheduledPurger(ctx, &wg)
 	wg.Wait()
 	slog.Info("shutdown mirage-ecs")
 	select {
@@ -147,6 +148,32 @@ func (m *Mirage) RunAccessCountCollector(ctx context.Context, wg *sync.WaitGroup
 	}
 }
 
+func (m *Mirage) RunScheduledPurger(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	p := m.Config.Purge
+	if p == nil {
+		slog.Debug("Purge is not configured")
+		return
+	}
+	slog.Info(f("starting up RunScheduledPurger() schedule: %s", p.Cron.String()))
+	for {
+		now := time.Now().Add(time.Minute)
+		next := p.Cron.Next(now)
+		slog.Info(f("next purge invocation at: %s", next))
+		duration := time.Until(next)
+		select {
+		case <-ctx.Done():
+			slog.Info("RunScheduledPurger() is done")
+			return
+		case <-time.After(duration):
+			slog.Info("scheduled purge invoked")
+			if err := m.WebApi.purge(ctx, p.PurgeParams); err != nil {
+				slog.Warn(err.Error())
+			}
+		}
+	}
+}
+
 const (
 	CloudWatchMetricNameSpace = "mirage-ecs"
 	CloudWatchMetricName      = "RequestCount"
@@ -184,7 +211,7 @@ SYNC:
 		})
 		available := make(map[string]bool)
 		for _, info := range running {
-			slog.Debug(f("ruuning task %s", info.ID))
+			slog.Debug(f("running task %s", info.ID))
 			if info.IPAddress != "" {
 				available[info.SubDomain] = true
 				for name, port := range info.PortMap {

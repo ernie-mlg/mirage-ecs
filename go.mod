@@ -20,12 +20,14 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/methane/rproxy v0.0.0-20130309122237-aafd1c66433b
 	github.com/samber/lo v1.38.1
+	github.com/winebarrel/cronplan v1.10.1
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/alecthomas/participle/v2 v2.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.10 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.27 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.5 // indirect

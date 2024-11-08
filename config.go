@@ -44,6 +44,7 @@ type Config struct {
 	ECS       ECSCfg     `yaml:"ecs"`
 	Link      Link       `yaml:"link"`
 	Auth      *Auth      `yaml:"auth"`
+	Purge     *Purge     `yaml:"purge"`
 
 	compatV1  bool
 	localMode bool
@@ -234,7 +235,8 @@ func NewConfig(ctx context.Context, p *ConfigParams) (*Config, error) {
 		ECS: ECSCfg{
 			Region: os.Getenv("AWS_REGION"),
 		},
-		Auth: nil,
+		Auth:  nil,
+		Purge: nil,
 
 		localMode: p.LocalMode,
 		compatV1:  p.CompatV1,
@@ -317,6 +319,12 @@ func NewConfig(ctx context.Context, p *ConfigParams) (*Config, error) {
 
 	if err := cfg.fillECSDefaults(ctx); err != nil {
 		slog.Warn(f("failed to fill ECS defaults: %s", err))
+	}
+
+	if cfg.Purge != nil {
+		if err := cfg.Purge.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid purge config: %w", err)
+		}
 	}
 	return cfg, nil
 }

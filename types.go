@@ -59,10 +59,10 @@ func (r *APILaunchRequest) MergeForm(form url.Values) {
 }
 
 type APIPurgeRequest struct {
-	Duration      json.Number `json:"duration" form:"duration"`
-	Excludes      []string    `json:"excludes" form:"excludes"`
-	ExcludeTags   []string    `json:"exclude_tags" form:"exclude_tags"`
-	ExcludeRegexp string      `json:"exclude_regexp" form:"exclude_regexp"`
+	Duration      json.Number `json:"duration" form:"duration" yaml:"duration"`
+	Excludes      []string    `json:"excludes" form:"excludes" yaml:"excludes"`
+	ExcludeTags   []string    `json:"exclude_tags" form:"exclude_tags" yaml:"exclude_tags"`
+	ExcludeRegexp string      `json:"exclude_regexp" form:"exclude_regexp" yaml:"exclude_regexp"`
 }
 
 type PurgeParams struct {

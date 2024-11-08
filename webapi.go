@@ -240,11 +240,22 @@ func (api *WebApi) ApiAccess(c echo.Context) error {
 }
 
 func (api *WebApi) ApiPurge(c echo.Context) error {
-	code, err := api.purge(c)
-	if err != nil {
-		return c.JSON(code, APICommonResponse{Result: err.Error()})
+	r := APIPurgeRequest{}
+	if err := c.Bind(&r); err != nil {
+		return c.JSON(http.StatusBadRequest, APICommonResponse{Result: err.Error()})
 	}
-	return c.JSON(code, APICommonResponse{Result: "accepted"})
+
+	params, err := r.Validate()
+	if err != nil {
+		slog.Error(f("purge failed: %s", err))
+		return c.JSON(http.StatusBadRequest, APICommonResponse{Result: err.Error()})
+	}
+
+	ctx := c.Request().Context()
+	if err := api.purge(ctx, params); err != nil {
+		return c.JSON(http.StatusInternalServerError, APICommonResponse{Result: err.Error()})
+	}
+	return c.JSON(http.StatusOK, APICommonResponse{Result: "accepted"})
 }
 
 func (api *WebApi) logs(c echo.Context) (int, []string, error) {
@@ -371,22 +382,11 @@ func validateSubdomain(s string) error {
 	return nil
 }
 
-func (api *WebApi) purge(c echo.Context) (int, error) {
-	r := APIPurgeRequest{}
-	if err := c.Bind(&r); err != nil {
-		return http.StatusBadRequest, err
-	}
-
-	p, err := r.Validate()
-	if err != nil {
-		slog.Error(f("purge failed: %s", err))
-		return http.StatusBadRequest, err
-	}
-
-	infos, err := api.runner.List(c.Request().Context(), statusRunning)
+func (api *WebApi) purge(ctx context.Context, p *PurgeParams) error {
+	infos, err := api.runner.List(ctx, statusRunning)
 	if err != nil {
 		slog.Error(f("list ecs failed: %s", err))
-		return http.StatusInternalServerError, err
+		return fmt.Errorf("list tasks failed: %w", err)
 	}
 	slog.Info("purge subdomains",
 		"duration", p.Duration,
@@ -408,7 +408,7 @@ func (api *WebApi) purge(c echo.Context) (int, error) {
 	}
 
 	slog.Info("no subdomains to purge")
-	return http.StatusOK, nil
+	return nil
 }
 
 func (api *WebApi) purgeSubdomains(ctx context.Context, subdomains []string, duration time.Duration) {
