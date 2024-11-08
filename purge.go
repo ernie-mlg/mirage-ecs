@@ -7,10 +7,11 @@ import (
 )
 
 type Purge struct {
-	Schedule    string           `json:"schedule"`
-	Request     *APIPurgeRequest `json:"request"`
-	PurgeParams *PurgeParams
-	Cron        *cronplan.Expression
+	Schedule string           `json:"schedule" yaml:"schedule"`
+	Request  *APIPurgeRequest `json:"request" yaml:"request"`
+
+	PurgeParams *PurgeParams         `json:"-" yaml:"-"`
+	Cron        *cronplan.Expression `json:"-" yaml:"-"`
 }
 
 func (p *Purge) Validate() error {
