@@ -47,9 +47,7 @@ ecs:
         - sg-gggg
       assign_public_ip: ENABLED
 
-storage:
-  datadir: ./data
-  htmldir: ./html
+htmldir: ./html
 parameters:
   - name: branch
     env: GIT_BRANCH
