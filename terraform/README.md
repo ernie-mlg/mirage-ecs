@@ -32,7 +32,7 @@ You can customize the deployment by editing `terraform.tfvars` and `ecspresso.ym
 
 `oauth_client_id` and `oauth_client_secret` are used for authentication by ALB with Google OAuth.
 If you want to enable authentication, you should set them.
-Set the Google OAuth callback URL to `https://mirage.{var.domain}/oauth2/idresponse`.
+Set the Google OAuth callback URL to `https://mirage.{var.domain}/oauth2/idpresponse`.
 
 `ecspresso.yml` is used for ECS deployment.
 See [ecspresso](https://github.com/kayac/ecspresso) for details.
