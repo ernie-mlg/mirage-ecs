@@ -82,7 +82,7 @@ resource "aws_lb_listener_rule" "mirage-ecs-mirage-web" {
 
   // If you want to use OIDC authentication, you need to set the following tf variables.
   // oauth_client_id, oauth_client_secret
-  // You must set the OAuth callback URL to https://${var.domain}/oauth2/idpresponse
+  // You must set the OAuth callback URL to https://mirage.${var.domain}/oauth2/idpresponse
   // See also https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/listener-authenticate-users.html
   dynamic "action" {
     for_each = var.oauth_client_id != "" ? [1] : []
