@@ -224,6 +224,7 @@ func (r *ReverseProxy) AddSubdomain(subdomain string, ipaddress string, targetPo
 			continue
 		}
 		handler := rproxy.NewSingleHostReverseProxy(destUrl)
+		handler.FlushInterval = time.Second
 		tp := &Transport{
 			Transport: newHTTPTransport(r.cfg.Network.ProxyTimeout),
 			Counter:   counter,
