@@ -6,6 +6,39 @@ mirage-ecs can run and stop ECS tasks and proxy HTTP requests to the tasks with 
 
 ## Usage
 
+### Deployment(ECS)
+
+1. Log in to ECR
+```
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+
+2. Docker image build
+```
+docker build -t yomel/devmirage/mirage-ecs . -f ./docker/Dockerfile
+```
+
+3. Tag image
+```
+docker tag yomel/devmirage/mirage-ecs:latest ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/yomel/devmirage/mirage-ecs:latest
+```
+
+4. Docker push
+```
+docker push ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/yomel/devmirage/mirage-ecs:latest
+```
+
+5. Deploy ECS
+
+Click 「Amazon Elastic Container Service > クラスター > yomel-devmirage-cluster 」
+
+Click 「サービスを更新」
+
+Place a checkmark 「新しいデプロイの強制」
+
+Click 「更新」
+
+
 ### Minimal Configuration
 
 Set a single environment variable.
