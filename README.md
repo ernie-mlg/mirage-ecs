@@ -8,24 +8,33 @@ mirage-ecs can run and stop ECS tasks and proxy HTTP requests to the tasks with 
 
 ### Deployment(ECS)
 
-1. Log in to ECR
+1. Set environment variables
 ```
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com
-```
-
-2. Docker image build
-```
-docker build -t yomel/devmirage/mirage-ecs . -f ./docker/Dockerfile
+AWS_ACCOUNT_ID=xxxxxxxxx
+IMAGE_REPOSITORY_NAME=yomel/devmirage/mirage-ecs
+IMAGE_TAG=$(git log -n 1 --format=%H)
+REPOSITORY_URI=${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/${IMAGE_REPOSITORY_NAME}
 ```
 
-3. Tag image
+2. Log in to ECR
 ```
-docker tag yomel/devmirage/mirage-ecs:latest ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/yomel/devmirage/mirage-ecs:latest
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+
+3. Docker image build
+```
+docker build -f ./docker/Dockerfile -t $REPOSITORY_URI:latest .
+```
+
+4. Tag image
+```
+docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 ```
 
 4. Docker push
 ```
-docker push ${account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/yomel/devmirage/mirage-ecs:latest
+docker push $REPOSITORY_URI:latest
+docker push $REPOSITORY_URI:$IMAGE_TAG
 ```
 
 5. Deploy ECS
