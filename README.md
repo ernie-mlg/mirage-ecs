@@ -6,6 +6,55 @@ mirage-ecs can run and stop ECS tasks and proxy HTTP requests to the tasks with 
 
 ## Usage
 
+### Deployment(ECS)
+
+1. Set aws credential
+```
+export AWS_ACCESS_KEY_ID="xxxxxxxxxxxxxxxxx"
+export AWS_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxx"
+export AWS_SESSION_TOKEN="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+2. Set environment variables
+```
+AWS_ACCOUNT_ID=xxxxxxxxx
+IMAGE_REPOSITORY_NAME=yomel/devmirage/mirage-ecs
+IMAGE_TAG=$(git log -n 1 --format=%H)
+REPOSITORY_URI=${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/${IMAGE_REPOSITORY_NAME}
+```
+
+3. Log in to ECR
+```
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+
+4. Docker image build
+```
+docker build -f ./docker/Dockerfile -t $REPOSITORY_URI:latest .
+```
+
+5. Tag image
+```
+docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+```
+
+6. Docker push
+```
+docker push $REPOSITORY_URI:latest
+docker push $REPOSITORY_URI:$IMAGE_TAG
+```
+
+7. Deploy ECS
+
+Click 「Amazon Elastic Container Service > クラスター > yomel-devmirage-cluster 」
+
+Click 「サービスを更新」
+
+Place a checkmark 「新しいデプロイの強制」
+
+Click 「更新」
+
+
 ### Minimal Configuration
 
 Set a single environment variable.
